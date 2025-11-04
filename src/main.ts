@@ -219,7 +219,7 @@ class App {
       this.isRecording = true;
       this.startBtn.textContent = 'Stop Recording';
       this.startBtn.classList.add('recording');
-      this.updateStatus('Recording... Drawing text + real-time vectors!', true);
+      this.updateStatus('Recording... Speech rate controls letter spacing', true);
 
       console.log('[App] Recording started successfully');
 

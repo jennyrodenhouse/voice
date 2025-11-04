@@ -572,29 +572,8 @@ export class VoiceTypeface {
         this.realtimePath.smooth({ type: 'continuous' });
       }
 
-      // Update stroke weight in real-time
-      // Add irregularity to thin/quiet lines
-      let strokeWidth = this.currentVisualParams.strokeWeight;
-
-      // When volume is low (quiet), add random variation to make lines irregular
-      if (normalizedParams.volumeNorm < 0.3) {
-        // More irregularity for quieter sounds (inverse relationship)
-        const irregularityAmount = (0.3 - normalizedParams.volumeNorm) * 3; // 0 to 0.9
-        const randomVariation = (Math.random() - 0.5) * irregularityAmount * strokeWidth;
-        strokeWidth = Math.max(0.3, strokeWidth + randomVariation);
-      }
-
-      this.realtimePath.strokeWidth = strokeWidth;
-
-      // Apply waviness if articulation is low
-      if (this.currentVisualParams.baselineWaviness > 0.2) {
-        const segments = this.realtimePath.segments;
-        if (segments.length > 1) {
-          const lastSegment = segments[segments.length - 1];
-          const wave = Math.sin(this.frameCount * 0.1) * this.currentVisualParams.baselineWaviness * 10;
-          lastSegment.point.y += wave;
-        }
-      }
+      // Update stroke weight (constant, no variation)
+      this.realtimePath.strokeWidth = this.currentVisualParams.strokeWeight;
 
       this.lastRealtimePoint = point;
     } else {
