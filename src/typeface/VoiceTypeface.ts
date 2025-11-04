@@ -50,6 +50,9 @@ export class VoiceTypeface {
     // Set up infinite canvas (no bounds clipping)
     paper.view.autoUpdate = false;
 
+    // Apply initial view transform so content is visible from the start
+    this.applyViewTransform();
+
     // Initialize modules (but not audio context yet - needs user gesture)
     this.visualMapper = new VisualMapper();
     this.letterGenerator = new LetterGenerator();
@@ -69,6 +72,9 @@ export class VoiceTypeface {
 
     this.setupSpeechRecognition();
     this.setupInteractions();
+
+    // Initial render to show canvas at default position
+    paper.view.update();
     console.log('[VoiceTypeface] Initialized successfully');
   }
 

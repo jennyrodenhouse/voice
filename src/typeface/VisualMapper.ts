@@ -54,13 +54,13 @@ export class VisualMapper {
   }
 
   /**
-   * Map volume to stroke weight (0.5 to 25)
-   * Wider range with better sensitivity at low volumes
+   * Map volume to stroke weight (1 to 80)
+   * Much wider range for dramatic thickness variation
    */
   private mapVolumeToStrokeWeight(volume: number): number {
-    // Exponential curve for better sensitivity
+    // Exponential curve for better sensitivity at low volumes
     const curved = Math.pow(volume, 0.7);
-    return 0.5 + curved * 24.5;
+    return 1 + curved * 79;
   }
 
   /**
