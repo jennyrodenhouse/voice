@@ -11,7 +11,8 @@ import { VisualParameters } from '../audio/types';
  */
 export class VoiceTypeface {
   private canvas: HTMLCanvasElement;
-  private voiceAnalyzer: VoiceAnalyzer;
+  private audioContext: AudioContext | null = null;
+  private voiceAnalyzer: VoiceAnalyzer | null = null;
   private visualMapper: VisualMapper;
   private letterGenerator: LetterGenerator;
   private speechRecognizer: SpeechRecognizer;
@@ -28,14 +29,13 @@ export class VoiceTypeface {
   private onTranscriptUpdate?: (text: string) => void;
 
   constructor(canvas: HTMLCanvasElement) {
+    console.log('[VoiceTypeface] Initializing...');
     this.canvas = canvas;
 
     // Initialize Paper.js
     paper.setup(canvas);
 
-    // Initialize modules
-    const audioContext = new AudioContext();
-    this.voiceAnalyzer = new VoiceAnalyzer(audioContext);
+    // Initialize modules (but not audio context yet - needs user gesture)
     this.visualMapper = new VisualMapper();
     this.letterGenerator = new LetterGenerator();
     this.speechRecognizer = new SpeechRecognizer();
@@ -53,27 +53,79 @@ export class VoiceTypeface {
     };
 
     this.setupSpeechRecognition();
+    console.log('[VoiceTypeface] Initialized successfully');
   }
 
   /**
    * Start voice recording and rendering
    */
   async start(): Promise<void> {
+    console.log('[VoiceTypeface] Starting...');
+
     try {
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      }
+
+      console.log('[VoiceTypeface] Requesting microphone access...');
+
       // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      console.log('[VoiceTypeface] Microphone access granted');
+
+      // Create audio context (must be done in user gesture)
+      if (!this.audioContext) {
+        console.log('[VoiceTypeface] Creating AudioContext...');
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      // Resume audio context if suspended
+      if (this.audioContext.state === 'suspended') {
+        console.log('[VoiceTypeface] Resuming AudioContext...');
+        await this.audioContext.resume();
+      }
+
+      console.log('[VoiceTypeface] AudioContext state:', this.audioContext.state);
 
       // Initialize voice analyzer
+      if (!this.voiceAnalyzer) {
+        console.log('[VoiceTypeface] Creating VoiceAnalyzer...');
+        this.voiceAnalyzer = new VoiceAnalyzer(this.audioContext);
+      }
+
+      console.log('[VoiceTypeface] Initializing VoiceAnalyzer...');
       await this.voiceAnalyzer.initialize(stream);
 
       // Start speech recognition
+      console.log('[VoiceTypeface] Starting speech recognition...');
       this.speechRecognizer.start();
 
       // Start animation loop
+      console.log('[VoiceTypeface] Starting animation loop...');
       this.startAnimation();
 
+      console.log('[VoiceTypeface] Started successfully!');
+
     } catch (error) {
-      console.error('Error starting voice typeface:', error);
+      console.error('[VoiceTypeface] Error starting:', error);
+
+      // Add more detailed error information
+      if (error instanceof DOMException) {
+        console.error('[VoiceTypeface] DOMException:', {
+          name: error.name,
+          message: error.message,
+          code: error.code
+        });
+      }
+
       throw error;
     }
   }
@@ -82,13 +134,19 @@ export class VoiceTypeface {
    * Stop recording and rendering
    */
   stop(): void {
-    this.voiceAnalyzer.destroy();
+    console.log('[VoiceTypeface] Stopping...');
+
+    if (this.voiceAnalyzer) {
+      this.voiceAnalyzer.destroy();
+    }
     this.speechRecognizer.stop();
 
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
+
+    console.log('[VoiceTypeface] Stopped');
   }
 
   /**
@@ -140,6 +198,11 @@ export class VoiceTypeface {
    * Add a character to the canvas
    */
   private addCharacter(char: string): void {
+    if (!this.voiceAnalyzer) {
+      console.warn('[VoiceTypeface] Voice analyzer not initialized');
+      return;
+    }
+
     // Get current visual parameters
     const voiceParams = this.voiceAnalyzer.getVoiceParameters();
     const normalizedParams = this.voiceAnalyzer.normalizeParameters(voiceParams);
@@ -252,6 +315,8 @@ export class VoiceTypeface {
    */
   private startAnimation(): void {
     const animate = () => {
+      if (!this.voiceAnalyzer) return;
+
       // Get current voice parameters
       const voiceParams = this.voiceAnalyzer.getVoiceParameters();
       const normalizedParams = this.voiceAnalyzer.normalizeParameters(voiceParams);

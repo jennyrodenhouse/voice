@@ -9,14 +9,17 @@ export class SpeechRecognizer {
   private words: string[] = [];
 
   constructor() {
+    console.log('[SpeechRecognizer] Initializing...');
     if ('webkitSpeechRecognition' in window) {
+      console.log('[SpeechRecognizer] Using webkitSpeechRecognition');
       this.recognition = new (window as any).webkitSpeechRecognition();
       this.setupRecognition();
     } else if ('SpeechRecognition' in window) {
+      console.log('[SpeechRecognizer] Using SpeechRecognition');
       this.recognition = new (window as any).SpeechRecognition();
       this.setupRecognition();
     } else {
-      console.warn('Speech recognition not supported in this browser');
+      console.warn('[SpeechRecognizer] Speech recognition not supported in this browser');
     }
   }
 
@@ -51,16 +54,22 @@ export class SpeechRecognizer {
     };
 
     this.recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+      console.error('[SpeechRecognizer] Error:', event.error, event);
+      // Don't auto-restart on certain errors
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        console.log('[SpeechRecognizer] Not restarting due to error type:', event.error);
+      }
     };
 
     this.recognition.onend = () => {
+      console.log('[SpeechRecognizer] Ended, attempting restart...');
       // Auto-restart if it stops
       if (this.recognition) {
         try {
           this.recognition.start();
+          console.log('[SpeechRecognizer] Restarted successfully');
         } catch (e) {
-          // Already started
+          console.log('[SpeechRecognizer] Already started or error restarting:', e);
         }
       }
     };
@@ -87,12 +96,16 @@ export class SpeechRecognizer {
    * Start speech recognition
    */
   start(): void {
+    console.log('[SpeechRecognizer] Start called');
     if (this.recognition) {
       try {
         this.recognition.start();
+        console.log('[SpeechRecognizer] Start method called successfully');
       } catch (e) {
-        console.warn('Recognition already started');
+        console.warn('[SpeechRecognizer] Recognition already started or error:', e);
       }
+    } else {
+      console.warn('[SpeechRecognizer] No recognition instance available');
     }
   }
 

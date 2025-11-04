@@ -20,9 +20,48 @@ class App {
   private vibratoVal!: HTMLElement;
 
   constructor() {
+    console.log('[App] Initializing application...');
     this.initializeUI();
+    this.checkBrowserCompatibility();
     this.setupEventListeners();
     this.resizeCanvas();
+    console.log('[App] Application initialized');
+  }
+
+  /**
+   * Check browser compatibility
+   */
+  private checkBrowserCompatibility(): void {
+    const issues: string[] = [];
+
+    // Check for getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      issues.push('• Microphone access not supported');
+    }
+
+    // Check for AudioContext
+    if (!window.AudioContext && !(window as any).webkitAudioContext) {
+      issues.push('• Web Audio API not supported');
+    }
+
+    // Check for Web Speech API (optional but recommended)
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      console.warn('[App] Web Speech API not supported - transcription will not work');
+      this.transcriptEl.textContent = 'Speech recognition not available in this browser';
+    }
+
+    // Show compatibility issues if any
+    if (issues.length > 0) {
+      const message = 'Browser compatibility issues detected:\n\n' +
+        issues.join('\n') +
+        '\n\nPlease use Chrome, Edge, or Safari for the best experience.';
+
+      this.updateStatus('Browser not fully supported', false);
+      alert(message);
+      this.startBtn.disabled = true;
+    } else {
+      console.log('[App] Browser compatibility check passed');
+    }
   }
 
   /**
@@ -65,6 +104,8 @@ class App {
    * Toggle recording state
    */
   private async toggleRecording(): Promise<void> {
+    console.log('[App] Toggle recording, current state:', this.isRecording);
+
     if (!this.isRecording) {
       await this.startRecording();
     } else {
@@ -76,11 +117,15 @@ class App {
    * Start recording
    */
   private async startRecording(): Promise<void> {
+    console.log('[App] Start recording called');
+
     try {
       this.updateStatus('Requesting microphone access...', false);
+      console.log('[App] Status updated');
 
       // Initialize typeface
       if (!this.typeface) {
+        console.log('[App] Creating VoiceTypeface instance...');
         this.typeface = new VoiceTypeface(this.canvas);
 
         // Setup callbacks
@@ -91,28 +136,44 @@ class App {
         this.typeface.setOnTranscriptUpdate((text) => {
           this.updateTranscript(text);
         });
+
+        console.log('[App] VoiceTypeface instance created');
       }
 
       // Start recording
+      console.log('[App] Calling typeface.start()...');
       await this.typeface.start();
+      console.log('[App] typeface.start() completed');
 
       this.isRecording = true;
       this.startBtn.textContent = 'Stop Recording';
       this.startBtn.classList.add('recording');
       this.updateStatus('Recording... Speak to draw!', true);
 
+      console.log('[App] Recording started successfully');
+
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      console.error('[App] Failed to start recording:', error);
       this.updateStatus('Error: Could not access microphone', false);
 
       // Show helpful error message
       if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          alert('Microphone access denied. Please allow microphone access and try again.');
-        } else if (error.name === 'NotFoundError') {
+        console.error('[App] Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          alert('Microphone access denied. Please allow microphone access in your browser settings and try again.');
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
           alert('No microphone found. Please connect a microphone and try again.');
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          alert('Microphone is being used by another application. Please close other apps using the microphone and try again.');
+        } else if (error.name === 'SecurityError') {
+          alert('Cannot access microphone due to security restrictions. Make sure you are using HTTPS or localhost.');
         } else {
-          alert(`Error: ${error.message}`);
+          alert(`Error: ${error.message}\n\nPlease check the browser console for more details.`);
         }
       }
     }
