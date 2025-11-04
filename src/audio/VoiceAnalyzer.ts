@@ -58,12 +58,17 @@ export class VoiceAnalyzer {
       return this.getDefaultParameters();
     }
 
-    const features: MeydaFeaturesObject = this.analyzer.get([
+    const features: MeydaFeaturesObject | null = this.analyzer.get([
       'rms',
       'zcr',
       'spectralCentroid',
       'energy'
     ]);
+
+    // Meyda can return null when there's not enough audio data
+    if (!features) {
+      return this.getDefaultParameters();
+    }
 
     const pitch = this.estimatePitch(features);
     const volume = features.rms || 0;
@@ -101,11 +106,16 @@ export class VoiceAnalyzer {
    * Estimate pitch using autocorrelation
    * This is a simplified approach - using spectral centroid as a proxy
    */
-  private estimatePitch(features: MeydaFeaturesObject): number {
+  private estimatePitch(features: MeydaFeaturesObject | null): number {
     // For a more accurate pitch, we'd use autocorrelation or YIN algorithm
     // Here we use spectral centroid as a rough estimate
     // In production, you might want to use a dedicated pitch detection library
-    const centroid = features.spectralCentroid || 150;
+
+    if (!features || features.spectralCentroid === null || features.spectralCentroid === undefined) {
+      return 150; // Default pitch
+    }
+
+    const centroid = features.spectralCentroid;
 
     // Map spectral centroid to approximate pitch
     // This is a rough heuristic - actual pitch detection is more complex

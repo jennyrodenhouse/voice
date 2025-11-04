@@ -54,9 +54,16 @@ export class SpeechRecognizer {
     };
 
     this.recognition.onerror = (event: any) => {
+      // "no-speech" is not really an error - it just means the user isn't speaking
+      if (event.error === 'no-speech') {
+        console.log('[SpeechRecognizer] No speech detected (this is normal when not speaking)');
+        return;
+      }
+
       console.error('[SpeechRecognizer] Error:', event.error, event);
+
       // Don't auto-restart on certain errors
-      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+      if (event.error === 'audio-capture') {
         console.log('[SpeechRecognizer] Not restarting due to error type:', event.error);
       }
     };
