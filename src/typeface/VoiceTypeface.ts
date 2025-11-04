@@ -24,6 +24,13 @@ export class VoiceTypeface {
   private lineHeight: number = 150;
   private animationId: number | null = null;
 
+  // Zoom and pan
+  private zoom: number = 1;
+  private panX: number = 0;
+  private panY: number = 0;
+  private isPanning: boolean = false;
+  private lastPanPoint: paper.Point | null = null;
+
   // Callbacks
   private onParametersUpdate?: (params: any) => void;
   private onTranscriptUpdate?: (text: string) => void;
@@ -34,6 +41,9 @@ export class VoiceTypeface {
 
     // Initialize Paper.js
     paper.setup(canvas);
+
+    // Set up infinite canvas (no bounds clipping)
+    paper.view.autoUpdate = false;
 
     // Initialize modules (but not audio context yet - needs user gesture)
     this.visualMapper = new VisualMapper();
@@ -53,6 +63,7 @@ export class VoiceTypeface {
     };
 
     this.setupSpeechRecognition();
+    this.setupInteractions();
     console.log('[VoiceTypeface] Initialized successfully');
   }
 
@@ -158,6 +169,7 @@ export class VoiceTypeface {
     this.currentX = 50;
     this.currentY = 300;
     this.speechRecognizer.clearTranscript();
+    this.resetView();
   }
 
   /**
@@ -172,6 +184,177 @@ export class VoiceTypeface {
    */
   setOnTranscriptUpdate(callback: (text: string) => void): void {
     this.onTranscriptUpdate = callback;
+  }
+
+  /**
+   * Set up zoom and pan interactions
+   */
+  private setupInteractions(): void {
+    // Mouse wheel for zoom
+    this.canvas.addEventListener('wheel', (e: WheelEvent) => {
+      e.preventDefault();
+
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.1, Math.min(10, this.zoom * zoomFactor));
+
+      // Zoom towards mouse position
+      const mouseX = e.offsetX;
+      const mouseY = e.offsetY;
+
+      // Calculate the point in world coordinates before zoom
+      const worldX = (mouseX - this.canvas.width / 2 - this.panX) / this.zoom;
+      const worldY = (mouseY - this.canvas.height / 2 - this.panY) / this.zoom;
+
+      // Update zoom
+      this.zoom = newZoom;
+
+      // Adjust pan to keep the mouse point fixed
+      this.panX = mouseX - this.canvas.width / 2 - worldX * this.zoom;
+      this.panY = mouseY - this.canvas.height / 2 - worldY * this.zoom;
+
+      this.applyViewTransform();
+    });
+
+    // Mouse drag for panning
+    this.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+      // Only pan with middle mouse or ctrl+left mouse
+      if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
+        e.preventDefault();
+        this.isPanning = true;
+        this.lastPanPoint = new paper.Point(e.offsetX, e.offsetY);
+        this.canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    this.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+      if (this.isPanning && this.lastPanPoint) {
+        const currentPoint = new paper.Point(e.offsetX, e.offsetY);
+        const delta = currentPoint.subtract(this.lastPanPoint);
+
+        this.panX += delta.x;
+        this.panY += delta.y;
+
+        this.lastPanPoint = currentPoint;
+        this.applyViewTransform();
+      }
+    });
+
+    this.canvas.addEventListener('mouseup', () => {
+      if (this.isPanning) {
+        this.isPanning = false;
+        this.lastPanPoint = null;
+        this.canvas.style.cursor = 'default';
+      }
+    });
+
+    this.canvas.addEventListener('mouseleave', () => {
+      if (this.isPanning) {
+        this.isPanning = false;
+        this.lastPanPoint = null;
+        this.canvas.style.cursor = 'default';
+      }
+    });
+
+    // Touch support for mobile
+    let lastTouchDistance: number | null = null;
+
+    this.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        lastTouchDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+      } else if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        this.isPanning = true;
+        this.lastPanPoint = new paper.Point(
+          touch.clientX - rect.left,
+          touch.clientY - rect.top
+        );
+      }
+    });
+
+    this.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastTouchDistance) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+
+        const zoomFactor = currentDistance / lastTouchDistance;
+        this.zoom = Math.max(0.1, Math.min(10, this.zoom * zoomFactor));
+        lastTouchDistance = currentDistance;
+
+        this.applyViewTransform();
+      } else if (e.touches.length === 1 && this.isPanning && this.lastPanPoint) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const currentPoint = new paper.Point(
+          touch.clientX - rect.left,
+          touch.clientY - rect.top
+        );
+        const delta = currentPoint.subtract(this.lastPanPoint);
+
+        this.panX += delta.x;
+        this.panY += delta.y;
+
+        this.lastPanPoint = currentPoint;
+        this.applyViewTransform();
+      }
+    });
+
+    this.canvas.addEventListener('touchend', () => {
+      this.isPanning = false;
+      this.lastPanPoint = null;
+      lastTouchDistance = null;
+    });
+  }
+
+  /**
+   * Apply zoom and pan transform to Paper.js view
+   */
+  private applyViewTransform(): void {
+    paper.view.matrix.reset();
+    paper.view.matrix.translate(
+      this.canvas.width / 2 + this.panX,
+      this.canvas.height / 2 + this.panY
+    );
+    paper.view.matrix.scale(this.zoom);
+    paper.view.update();
+  }
+
+  /**
+   * Reset zoom and pan to default
+   */
+  resetView(): void {
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
+    this.applyViewTransform();
+  }
+
+  /**
+   * Zoom in
+   */
+  zoomIn(): void {
+    this.zoom = Math.min(10, this.zoom * 1.2);
+    this.applyViewTransform();
+  }
+
+  /**
+   * Zoom out
+   */
+  zoomOut(): void {
+    this.zoom = Math.max(0.1, this.zoom / 1.2);
+    this.applyViewTransform();
   }
 
   /**

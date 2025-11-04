@@ -10,6 +10,9 @@ class App {
   // UI Elements
   private startBtn!: HTMLButtonElement;
   private clearBtn!: HTMLButtonElement;
+  private zoomInBtn!: HTMLButtonElement;
+  private zoomOutBtn!: HTMLButtonElement;
+  private resetViewBtn!: HTMLButtonElement;
   private status!: HTMLElement;
   private canvas!: HTMLCanvasElement;
   private transcriptEl!: HTMLElement;
@@ -92,6 +95,9 @@ class App {
   private initializeUI(): void {
     this.startBtn = document.getElementById('startBtn') as HTMLButtonElement;
     this.clearBtn = document.getElementById('clearBtn') as HTMLButtonElement;
+    this.zoomInBtn = document.getElementById('zoomInBtn') as HTMLButtonElement;
+    this.zoomOutBtn = document.getElementById('zoomOutBtn') as HTMLButtonElement;
+    this.resetViewBtn = document.getElementById('resetViewBtn') as HTMLButtonElement;
     this.status = document.getElementById('status') as HTMLElement;
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
     this.transcriptEl = document.getElementById('transcript') as HTMLElement;
@@ -119,6 +125,27 @@ class App {
       this.clearCanvas();
     });
 
+    this.zoomInBtn.addEventListener('click', () => {
+      console.log('[App] ZOOM IN BUTTON CLICKED!');
+      if (this.typeface) {
+        this.typeface.zoomIn();
+      }
+    });
+
+    this.zoomOutBtn.addEventListener('click', () => {
+      console.log('[App] ZOOM OUT BUTTON CLICKED!');
+      if (this.typeface) {
+        this.typeface.zoomOut();
+      }
+    });
+
+    this.resetViewBtn.addEventListener('click', () => {
+      console.log('[App] RESET VIEW BUTTON CLICKED!');
+      if (this.typeface) {
+        this.typeface.resetView();
+      }
+    });
+
     window.addEventListener('resize', () => {
       console.log('[App] Window resized');
       this.resizeCanvas();
@@ -136,6 +163,11 @@ class App {
     if (container) {
       this.canvas.width = container.clientWidth;
       this.canvas.height = container.clientHeight;
+
+      // Update Paper.js view size and reapply zoom/pan transform
+      if (this.typeface) {
+        this.typeface.resetView();
+      }
     }
   }
 
