@@ -24,6 +24,11 @@ export class VoiceTypeface {
   private lineHeight: number = 150;
   private animationId: number | null = null;
 
+  // Real-time drawing
+  private realtimePath: paper.Path | null = null;
+  private lastRealtimePoint: paper.Point | null = null;
+  private frameCount: number = 0;
+
   // Zoom and pan
   private zoom: number = 1;
   private panX: number = 0;
@@ -494,6 +499,82 @@ export class VoiceTypeface {
   }
 
   /**
+   * Draw real-time strokes based on voice input
+   */
+  private drawRealtimeStroke(_voiceParams: any, normalizedParams: any): void {
+    const targetVisualParams = this.visualMapper.mapToVisual(normalizedParams);
+
+    // Smooth transition for visual params
+    this.currentVisualParams = this.visualMapper.smoothParameters(
+      this.currentVisualParams,
+      targetVisualParams,
+      0.3
+    );
+
+    // Only draw if there's significant volume (person is speaking)
+    if (normalizedParams.volumeNorm > 0.05) {
+      // Calculate position based on pitch and time
+      const pitchOffset = (normalizedParams.pitchNorm - 0.5) * 100;
+      const timeOffset = this.frameCount * this.currentVisualParams.letterSpacing;
+
+      const x = this.currentX + timeOffset;
+      const y = this.currentY + pitchOffset;
+      const point = new paper.Point(x, y);
+
+      // Start new path if needed
+      if (!this.realtimePath || !this.lastRealtimePoint ||
+          this.frameCount % 180 === 0) { // New path every 3 seconds at 60fps
+        if (this.realtimePath) {
+          this.letters.push({
+            char: '~',
+            path: this.realtimePath,
+            time: Date.now()
+          });
+        }
+
+        this.realtimePath = new paper.Path();
+        this.realtimePath.strokeColor = new paper.Color('#ffffff');
+        this.realtimePath.strokeCap = 'round';
+        this.realtimePath.strokeJoin = 'round';
+        this.realtimePath.add(point);
+        this.lastRealtimePoint = point;
+      } else {
+        // Add point to current path with smoothing
+        this.realtimePath.add(point);
+        this.realtimePath.smooth({ type: 'continuous' });
+      }
+
+      // Update stroke weight in real-time
+      this.realtimePath.strokeWidth = this.currentVisualParams.strokeWeight;
+
+      // Apply waviness if articulation is low
+      if (this.currentVisualParams.baselineWaviness > 0.2) {
+        const segments = this.realtimePath.segments;
+        if (segments.length > 1) {
+          const lastSegment = segments[segments.length - 1];
+          const wave = Math.sin(this.frameCount * 0.1) * this.currentVisualParams.baselineWaviness * 10;
+          lastSegment.point.y += wave;
+        }
+      }
+
+      this.lastRealtimePoint = point;
+    } else {
+      // No sound - finish current path
+      if (this.realtimePath) {
+        this.letters.push({
+          char: '~',
+          path: this.realtimePath,
+          time: Date.now()
+        });
+        this.realtimePath = null;
+        this.lastRealtimePoint = null;
+      }
+    }
+
+    this.frameCount++;
+  }
+
+  /**
    * Animation loop
    */
   private startAnimation(): void {
@@ -503,6 +584,9 @@ export class VoiceTypeface {
       // Get current voice parameters
       const voiceParams = this.voiceAnalyzer.getVoiceParameters();
       const normalizedParams = this.voiceAnalyzer.normalizeParameters(voiceParams);
+
+      // Draw real-time strokes based on voice
+      this.drawRealtimeStroke(voiceParams, normalizedParams);
 
       // Update callback
       if (this.onParametersUpdate) {

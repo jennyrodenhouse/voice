@@ -5,8 +5,12 @@ import paper from 'paper';
  * Generates letterform paths based on visual parameters
  */
 export class LetterGenerator {
-  private baseSize: number = 100; // Base x-height in pixels
+  private xHeight: number = 70; // x-height (height of lowercase letters like 'a', 'x')
   private time: number = 0;
+
+  // Define which letters have ascenders and descenders
+  private ascenders = new Set(['b', 'd', 'f', 'h', 'k', 'l', 't']);
+  private descenders = new Set(['g', 'j', 'p', 'q', 'y']);
 
   /**
    * Generate a path for a character
@@ -27,7 +31,7 @@ export class LetterGenerator {
     }
 
     // Apply visual transformations
-    this.applyVisualParameters(letterPath, visualParams, position);
+    this.applyVisualParameters(letterPath, visualParams, position, letter);
 
     return letterPath;
   }
@@ -39,7 +43,7 @@ export class LetterGenerator {
     char: string,
     visualParams: VisualParameters
   ): paper.Path | paper.CompoundPath | null {
-    const xHeight = this.baseSize;
+    const xHeight = this.xHeight;
     const sharpness = visualParams.sharpness;
 
     // Create letterforms - simplified geometric approach
@@ -110,11 +114,33 @@ export class LetterGenerator {
   private applyVisualParameters(
     path: paper.Path | paper.CompoundPath,
     visualParams: VisualParameters,
-    position: paper.Point
+    position: paper.Point,
+    letter: string
   ): void {
-    // Scale ascenders and descenders
-    const scaleY = 1.0;
-    path.scale(1, scaleY);
+    // Scale ascenders and descenders based on voice pitch
+    const segments = path instanceof paper.CompoundPath ?
+      path.children.flatMap((child: any) => (child as paper.Path).segments) :
+      path.segments;
+
+    // Apply different vertical scaling based on letter type
+    if (this.ascenders.has(letter)) {
+      // Scale ascenders - parts above x-height
+      segments.forEach((segment: paper.Segment) => {
+        if (segment.point.y < 0) { // Above baseline (ascender)
+          segment.point.y *= visualParams.ascenderLength;
+        }
+      });
+    }
+
+    if (this.descenders.has(letter)) {
+      // Scale descenders - parts below baseline
+      segments.forEach((segment: paper.Segment) => {
+        if (segment.point.y > this.xHeight) { // Below baseline (descender)
+          const distanceFromBaseline = segment.point.y - this.xHeight;
+          segment.point.y = this.xHeight + distanceFromBaseline * visualParams.descenderLength;
+        }
+      });
+    }
 
     // Apply baseline waviness
     if (visualParams.baselineWaviness > 0.1) {
@@ -410,7 +436,7 @@ export class LetterGenerator {
   private createDefaultShape(position: paper.Point, visualParams: VisualParameters): paper.Path {
     return new paper.Path.Circle({
       center: position,
-      radius: this.baseSize * 0.3,
+      radius: this.xHeight * 0.3,
       strokeColor: new paper.Color('#ffffff'),
       strokeWidth: visualParams.strokeWeight || 2
     });

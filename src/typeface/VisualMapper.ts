@@ -34,67 +34,79 @@ export class VisualMapper {
   }
 
   /**
-   * Map pitch to ascender length (0.5 to 2.0)
+   * Map pitch to ascender length (0.8 to 2.5)
+   * More dramatic range for better visual variation
    */
   private mapPitchToAscender(pitch: number): number {
-    // Higher pitch = longer ascenders
-    return 0.5 + pitch * 1.5;
+    // Apply curve for more sensitivity in mid-range
+    const curved = Math.pow(pitch, 1.3);
+    return 0.8 + curved * 1.7;
   }
 
   /**
-   * Map pitch to descender length (0.5 to 2.0)
+   * Map pitch to descender length (0.8 to 2.5)
+   * More dramatic range for better visual variation
    */
   private mapPitchToDescender(pitch: number): number {
-    // Higher pitch = longer descenders
-    return 0.5 + pitch * 1.5;
+    // Apply curve for more sensitivity in mid-range
+    const curved = Math.pow(pitch, 1.3);
+    return 0.8 + curved * 1.7;
   }
 
   /**
-   * Map volume to stroke weight (1 to 20)
+   * Map volume to stroke weight (0.5 to 25)
+   * Wider range with better sensitivity at low volumes
    */
   private mapVolumeToStrokeWeight(volume: number): number {
-    // Quiet = very thin (1px), loud = very thick (20px)
-    return 1 + volume * 19;
+    // Exponential curve for better sensitivity
+    const curved = Math.pow(volume, 0.7);
+    return 0.5 + curved * 24.5;
   }
 
   /**
    * Map articulation to baseline waviness (0 to 1)
+   * More responsive in the middle range
    */
   private mapArticulationToWaviness(articulation: number): number {
-    // High articulation = straight (0), low articulation = wavy (1)
-    return 1 - articulation;
+    // Apply S-curve for better mid-range sensitivity
+    const sCurve = 1 / (1 + Math.exp(-10 * (articulation - 0.5)));
+    return 1 - sCurve;
   }
 
   /**
    * Map articulation to letterform sharpness (0 to 1)
+   * More responsive in the middle range
    */
   private mapArticulationToSharpness(articulation: number): number {
-    // High articulation = sharp (1), low articulation = curved (0)
-    return articulation;
+    // Apply S-curve for better mid-range sensitivity
+    return 1 / (1 + Math.exp(-10 * (articulation - 0.5)));
   }
 
   /**
-   * Map speech rate to letter spacing (0.5 to 3.0)
+   * Map speech rate to letter spacing (0.3 to 4.0)
+   * Wider range for more dramatic effect
    */
   private mapRateToSpacing(rate: number): number {
-    // Slow speech = wide spacing (3.0), fast speech = tight spacing (0.5)
-    return 3.0 - rate * 2.5;
+    // Slow speech = wide spacing (4.0), fast speech = tight spacing (0.3)
+    return 4.0 - rate * 3.7;
   }
 
   /**
-   * Map vibrato to vibration frequency (0 to 10 Hz)
+   * Map vibrato to vibration frequency (0 to 15 Hz)
+   * Increased range for more visible effect
    */
   private mapVibratoToFrequency(vibrato: number): number {
-    // More vibrato = higher frequency oscillation
-    return vibrato * 10;
+    // Quadratic curve for better control
+    return vibrato * vibrato * 15;
   }
 
   /**
-   * Map vibrato to vibration amplitude (0 to 5 pixels)
+   * Map vibrato to vibration amplitude (0 to 8 pixels)
+   * Increased amplitude for visibility
    */
   private mapVibratoToAmplitude(vibrato: number): number {
-    // More vibrato = larger amplitude
-    return vibrato * 5;
+    // Quadratic curve for better control
+    return vibrato * vibrato * 8;
   }
 
   /**
