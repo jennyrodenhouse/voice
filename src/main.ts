@@ -219,7 +219,7 @@ class App {
       this.isRecording = true;
       this.startBtn.textContent = 'Stop Recording';
       this.startBtn.classList.add('recording');
-      this.updateStatus('Recording... Speak to draw!', true);
+      this.updateStatus('Recording... Drawing text + real-time vectors!', true);
 
       console.log('[App] Recording started successfully');
 
@@ -251,7 +251,7 @@ class App {
   }
 
   /**
-   * Stop recording
+   * Stop recording (preserves all typography)
    */
   private stopRecording(): void {
     if (this.typeface) {
@@ -261,7 +261,7 @@ class App {
     this.isRecording = false;
     this.startBtn.textContent = 'Start Recording';
     this.startBtn.classList.remove('recording');
-    this.updateStatus('Ready to record', false);
+    this.updateStatus('Recording stopped - typography preserved', false);
   }
 
   /**

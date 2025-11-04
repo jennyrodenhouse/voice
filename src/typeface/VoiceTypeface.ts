@@ -147,22 +147,38 @@ export class VoiceTypeface {
   }
 
   /**
-   * Stop recording and rendering
+   * Stop recording and rendering (pause but keep everything visible)
    */
   stop(): void {
     console.log('[VoiceTypeface] Stopping...');
 
-    if (this.voiceAnalyzer) {
-      this.voiceAnalyzer.destroy();
-    }
-    this.speechRecognizer.stop();
-
+    // Stop the animation loop (pauses real-time drawing)
     if (this.animationId !== null) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
 
-    console.log('[VoiceTypeface] Stopped');
+    // Finalize any in-progress real-time path
+    if (this.realtimePath) {
+      this.letters.push({
+        char: '~',
+        path: this.realtimePath,
+        time: Date.now()
+      });
+      this.realtimePath = null;
+      this.lastRealtimePoint = null;
+    }
+
+    // Stop speech recognition
+    this.speechRecognizer.stop();
+
+    // Stop audio analyzer
+    if (this.voiceAnalyzer) {
+      this.voiceAnalyzer.destroy();
+    }
+
+    // Note: We DON'T clear the canvas - everything stays visible!
+    console.log('[VoiceTypeface] Stopped - all typography preserved');
   }
 
   /**
@@ -474,9 +490,14 @@ export class VoiceTypeface {
   }
 
   /**
-   * Fade out old letters to prevent canvas clutter
+   * Fade out old letters to prevent canvas clutter (disabled to preserve all work)
    */
   private fadeOldLetters(): void {
+    // Disabled - we now keep all typography visible
+    // Users can use Clear Canvas button if they want to start fresh
+    return;
+
+    /* Original fade-out code preserved but disabled:
     const maxAge = 30000; // 30 seconds
     const fadeStartAge = 25000; // Start fading at 25 seconds
     const now = Date.now();
@@ -496,6 +517,7 @@ export class VoiceTypeface {
 
       return true;
     });
+    */
   }
 
   /**
