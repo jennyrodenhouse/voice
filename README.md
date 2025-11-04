@@ -2,6 +2,8 @@
 
 A real-time generative typeface system that transforms voice characteristics into dynamic vector letterforms. Speak into your microphone and watch as your voice's pitch, volume, articulation, rate, and vibrato are translated into unique typographic forms.
 
+🎤 **[Live Demo](https://jennyrodenhouse.github.io/voice/)** (Coming soon - deploying...)
+
 ## Features
 
 ### Voice-to-Visual Mappings
