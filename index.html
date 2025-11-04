@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Vector Typeface</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #controls {
+      padding: 20px;
+      background: rgba(20, 20, 20, 0.9);
+      border-bottom: 1px solid #333;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      z-index: 10;
+    }
+
+    button {
+      padding: 12px 24px;
+      background: #ffffff;
+      color: #0a0a0a;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #e0e0e0;
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.recording {
+      background: #ff3b30;
+      color: #ffffff;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .status.active {
+      color: #4cd964;
+    }
+
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      background: #0a0a0a;
+    }
+
+    .info {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(20, 20, 20, 0.9);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.6;
+      max-width: 300px;
+      border: 1px solid #333;
+    }
+
+    .info h3 {
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #4cd964;
+    }
+
+    .info div {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+      color: #888;
+    }
+
+    .info span {
+      color: #fff;
+    }
+
+    #transcript {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(20, 20, 20, 0.9);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+      max-width: 600px;
+      border: 1px solid #333;
+      color: #4cd964;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="controls">
+      <button id="startBtn">Start Recording</button>
+      <button id="clearBtn">Clear Canvas</button>
+      <div class="status" id="status">Ready to record</div>
+    </div>
+    <div id="canvas-container">
+      <canvas id="canvas" resize></canvas>
+      <div id="transcript"></div>
+      <div class="info">
+        <h3>Voice Parameters</h3>
+        <div><span>Pitch:</span> <span id="pitch-val">--</span></div>
+        <div><span>Volume:</span> <span id="volume-val">--</span></div>
+        <div><span>Articulation:</span> <span id="articulation-val">--</span></div>
+        <div><span>Rate:</span> <span id="rate-val">--</span></div>
+        <div><span>Vibrato:</span> <span id="vibrato-val">--</span></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

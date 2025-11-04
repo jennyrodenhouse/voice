@@ -1,0 +1,20 @@
+{
+  "name": "voice-vector-typeface",
+  "version": "0.1.0",
+  "description": "A generative typeface system that uses voice parameters to draw vectors in real-time",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "meyda": "^5.6.0",
+    "paper": "^0.12.17"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  }
+}
