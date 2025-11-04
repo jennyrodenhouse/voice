@@ -18,6 +18,24 @@
       overflow: hidden;
     }
 
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 9999;
+    }
+
+    #loading.hidden {
+      display: none;
+    }
+
     #app {
       width: 100vw;
       height: 100vh;
@@ -137,8 +155,25 @@
       font-weight: 500;
     }
   </style>
+  <script>
+    // Immediate feedback that HTML loaded
+    console.log('[HTML] Page loaded, timestamp:', new Date().toISOString());
+    console.log('[HTML] User agent:', navigator.userAgent);
+    console.log('[HTML] Protocol:', window.location.protocol);
+    console.log('[HTML] Hostname:', window.location.hostname);
+
+    // Log any errors
+    window.addEventListener('error', (event) => {
+      console.error('[HTML] Global error:', event.error, event.message, event.filename, event.lineno);
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('[HTML] Unhandled promise rejection:', event.reason);
+    });
+  </script>
 </head>
 <body>
+  <div id="loading">Loading Voice Vector Typeface...</div>
   <div id="app">
     <div id="controls">
       <button id="startBtn">Start Recording</button>

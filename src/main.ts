@@ -21,11 +21,33 @@ class App {
 
   constructor() {
     console.log('[App] Initializing application...');
-    this.initializeUI();
-    this.checkBrowserCompatibility();
-    this.setupEventListeners();
-    this.resizeCanvas();
-    console.log('[App] Application initialized');
+
+    try {
+      this.initializeUI();
+      console.log('[App] UI initialized');
+
+      this.checkBrowserCompatibility();
+      console.log('[App] Browser compatibility checked');
+
+      this.setupEventListeners();
+      console.log('[App] Event listeners set up');
+
+      this.resizeCanvas();
+      console.log('[App] Canvas resized');
+
+      // Hide loading indicator
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) {
+        loadingEl.classList.add('hidden');
+        console.log('[App] Loading indicator hidden');
+      }
+
+      console.log('[App] Application initialized successfully');
+    } catch (error) {
+      console.error('[App] Error during initialization:', error);
+      alert('Failed to initialize app. Check console for details.');
+      throw error;
+    }
   }
 
   /**
@@ -84,9 +106,26 @@ class App {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    this.startBtn.addEventListener('click', () => this.toggleRecording());
-    this.clearBtn.addEventListener('click', () => this.clearCanvas());
-    window.addEventListener('resize', () => this.resizeCanvas());
+    console.log('[App] Setting up event listeners...');
+
+    // Test button click immediately
+    this.startBtn.addEventListener('click', () => {
+      console.log('[App] START BUTTON CLICKED!');
+      this.toggleRecording();
+    });
+
+    this.clearBtn.addEventListener('click', () => {
+      console.log('[App] CLEAR BUTTON CLICKED!');
+      this.clearCanvas();
+    });
+
+    window.addEventListener('resize', () => {
+      console.log('[App] Window resized');
+      this.resizeCanvas();
+    });
+
+    console.log('[App] Event listeners attached successfully');
+    console.log('[App] startBtn element:', this.startBtn);
   }
 
   /**
