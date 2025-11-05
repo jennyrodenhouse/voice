@@ -389,8 +389,10 @@ export class VoiceTypeface {
    */
   private setupSpeechRecognition(): void {
     this.speechRecognizer.onWord((word) => {
+      // Convert to lowercase - only lowercase letterforms
+      const lowercaseWord = word.toLowerCase();
       // Add each character of the word
-      for (const char of word) {
+      for (const char of lowercaseWord) {
         this.addCharacter(char);
       }
       // Add space after word
